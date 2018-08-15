@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Minoru</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+       
+      #map {
+        height: 100%;
+      }
+       
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+	var url = "https://api.spark.io/v1/devices/";
+    var map;
+	var markers = []; 
+	var Photones = [
+		["42003c001551353531343431","2a81f8cf11e752ce750896d2bdb8568db578dc78","25.7401114","-100.30569330000003","10.919805","","0","19",],	
+		["440057000f51353532343635","799b81c43e8167492ecd6a581bbc8d8e8745521f","25.7295847","-100.3445827","","22","67.49404296874998","26.005761718750005",],	
+		["2e0030001447353136383631","971de6af15d978e802478b0d02d505410c751376","25.657999","-100.120937","0.66","26","46","0",],	
+		["460054000e51353532343635","1d1f08b783105b5d5c383f015c50caf56fc015b8","25.7369299","-100.26183549999999","","","","",],	
+		["220039001947343438323536","db0566f5a8072bac9fa1a0fb3452c3ae93ccc66b","25.68386","-100.2467632","","","","",],	
+		["2b001c001347343438323536","4361d138e70958ab716bd8ba3d20697c68a6061f","26.0023226","-100.5361814","3.223443279663722","19","20.49232854204528","12.210012422968644",],	
+	];
+	
+    function initMap() {
+	var LAT=25.686638;
+	var LNG=-100.314903;
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: LAT, lng:LNG},
+          zoom: 11
+        });
+		setMarkers(Photones);
+		setInterval(reloadMarkers,60000);//Second * 1000
+	}
+	  
+	function setMarkers(locations) {
+		for (var i = 0; i < locations.length; i++) {
+	var infowindow = new google.maps.InfoWindow();
+
+    var marker, i;
+			var Photon = locations[i];
+			var myLatLng = new google.maps.LatLng(Photon[2], Photon[3]);
+			var marker = new google.maps.Marker({
+				position: myLatLng,
+				map: map,
+			}); 
+			google.maps.event.addListener(marker, 'click', (function(marker, i) {
+			return function() {
+			  infowindow.setContent("CO "+locations[i][4]+" ppm<br> Temperatura "+locations[i][5]+" °C<br>PM10 "+locations[i][6]+" ug/m^3<br>PM25 "+locations[i][7]+" ug/m^3");
+			  infowindow.open(map, marker);
+			}
+      })(marker, i));
+			markers.push(marker);
+		}
+	}
+	
+	function getData(Photon){
+			var CO = Photon[4];
+			var TEMP = Photon[5];
+			var PM10 = Photon[6];
+			var PM25 = Photon[7];
+	}
+	
+	function reloadMarkers() {
+		for (var i=0; i<markers.length; i++) {
+			markers[i].setMap(null);
+		}
+		markers = [];
+		setMarkers(Photones);
+	}
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAkYNaofufDFe8cvXYnOzJSS6zDsrhE0os&callback=initMap"
+    async defer></script>
+	
+  </body>
+</html>

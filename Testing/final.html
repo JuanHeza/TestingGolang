@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Minoru 2</title>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+       
+      #map {
+        height: 100%;
+      }
+       
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map" ></div>
+    <script>
+	var url = "https://api.spark.io/v1/devices/";
+    var map;
+	var markers = []; 
+	var Photones = [
+		["42003c001551353531343431","2a81f8cf11e752ce750896d2bdb8568db578dc78","25.7401114","-100.30569330000003",,],	
+		["440057000f51353532343635","799b81c43e8167492ecd6a581bbc8d8e8745521f","25.7295847","-100.3445827",,],	
+		["2e0030001447353136383631","971de6af15d978e802478b0d02d505410c751376","25.657999","-100.120937",,],	
+		["460054000e51353532343635","1d1f08b783105b5d5c383f015c50caf56fc015b8","25.7369299","-100.26183549999999",,],	
+		["220039001947343438323536","db0566f5a8072bac9fa1a0fb3452c3ae93ccc66b","25.68386","-100.2467632",,],	
+		["2b001c001347343438323536","4361d138e70958ab716bd8ba3d20697c68a6061f","26.0023226","-100.5361814",,],	
+	];
+
+	var CO = "N/A";
+	var TEMP = "N/A";
+	var PM10 = "N/A";
+	var PM25 = "N/A";
+	var Data = "X";
+    
+	function initMap() {
+	var LAT=25.686638;
+	var LNG=-100.314903;
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: LAT, lng:LNG},
+          zoom: 10
+        });
+		setMarkers(Photones);
+		setInterval(reloadMarkers,60000);//Second * 1000
+	}
+	  
+	function setMarkers(locations) {
+		for (var i = 0; i < locations.length; i++) {
+			var infowindow = new google.maps.InfoWindow();
+			var cityCircle, i;
+			var Photon = locations[i];
+<!-- -->
+		var Id = Photon[0]
+		var Access = Photon[1]
+		var d1 = $.get("https://api.spark.io/v1/devices/"+Id+"/CO", {access_token: Access}, function(data,status){
+			CO = data.result;
+		}); 
+		var d2 = $.get("https://api.spark.io/v1/devices/"+Id+"/Temp", {access_token: Access}, function(data,status){
+			TEMP = data.result;
+		});
+		var d3 = $.get("https://api.spark.io/v1/devices/"+Id+"/PM10", {access_token: Access}, function(data,status){
+			PM10 = data.result;
+		});
+		var d4 = $.get("https://api.spark.io/v1/devices/"+Id+"/PM25", {access_token: Access}, function(data,status){
+			PM25 = data.result;
+		});
+		var myLatLng = new google.maps.LatLng(Photon[2], Photon[3]);
+		$.when(d1,d2,d3,d4).done(function(){
+			Data = "CO "+CO+" ppm<br> Temperatura "+TEMP+" °C<br>PM10 "+PM10+" ug/m^3<br>PM25 "+PM25+" ug/m^3"
+			Photon[4]=COVal(CO)
+			console.log("Photon #"+i+"-"+Photon[4])
+			if (Photon[4]==1){
+				var Color = "#00b300"//"green"
+			}else if(Photon[4] == 2){
+				var Color = "#ffd700"//"yellow"
+			}else if(Photon[4] == 3){
+				var Color = "#ff5700"//"orange"
+			}else if(Photon[4] == 4){
+				var Color = "#ff0000"//"red"
+			}else if(Photon[4] == 5){
+				var Color = "#993299"//"purple"
+			}
+			var cityCircle = new google.maps.Circle({
+				strokeOpacity: 0,
+				fillColor: Color,
+				fillOpacity: 0.35,
+				map: map,
+				center: myLatLng,
+				title:"Photon #"+i,	
+				radius:3000
+			});
+			google.maps.event.addListener(cityCircle, 'click', (function(cityCircle, i) {
+				return function() {    
+					infowindow.setContent(Data);
+					infowindow.setPosition(cityCircle.getCenter());
+					infowindow.open(map, cityCircle);
+				}
+			})(cityCircle, i));
+			markers.push(cityCircle);
+		}).fail(function() {
+			console.log("Error #"+i)
+		});	
+<!-- -->
+		}
+	}
+	
+	function reloadMarkers() {
+		for (var i=0; i<markers.length; i++) {
+			markers[i].setMap(null);
+		}
+		markers = [];
+		setMarkers(Photones);
+	}
+	
+	function COVal(CO){
+		if (CO <=50){
+			return 1;//
+		}else if(CO>51 && CO<=100){
+			return 2;
+		}else if(CO>101 && CO<=150){
+			return 3;
+		}else if(CO>151 && CO<=200){
+			return 4;
+		}else if(CO>201){
+			return 5;
+		}
+		return 0
+	}
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAkYNaofufDFe8cvXYnOzJSS6zDsrhE0os&callback=initMap"
+    async defer></script>
+	
+  </body>
+</html>
+<!--
+	0	50	verde
+	51	100	amarillo
+	101	150 naranja
+	151 200	rojo
+	201	999	morado
+-->
